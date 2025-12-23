@@ -1,0 +1,388 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Statistics | {{ site_title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a> &rsaquo; Statistics
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    #content {
+        max-width: 1400px;
+    }
+    .stats-header {
+        margin-bottom: 30px;
+    }
+    .stats-header h1 {
+        margin: 0 0 8px 0;
+        font-size: 28px;
+        color: #333;
+    }
+    .stats-header p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    @media (max-width: 1200px) {
+        .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .stat-card.green {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+    }
+    .stat-card.blue {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+    .stat-card.orange {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+    .stat-card.yellow {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        box-shadow: 0 4px 15px rgba(250, 112, 154, 0.3);
+    }
+    .stat-card.warning {
+        background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4);
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+    .stat-value {
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+    .stat-label {
+        font-size: 13px;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .section {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .section h2 {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+        color: #333;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section h2::before {
+        content: '';
+        width: 4px;
+        height: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 2px;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .data-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #666;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #eee;
+    }
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        color: #333;
+    }
+    .data-table tbody tr:hover {
+        background: #f8f9ff;
+    }
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+    @media (max-width: 900px) {
+        .two-column {
+            grid-template-columns: 1fr;
+        }
+    }
+    .accuracy-bar {
+        height: 8px;
+        background: #e8e8e8;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 4px;
+    }
+    .accuracy-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #11998e, #38ef7d);
+        transition: width 0.3s;
+    }
+    .accuracy-fill.low {
+        background: linear-gradient(90deg, #ff416c, #ff4b2b);
+    }
+    .accuracy-fill.medium {
+        background: linear-gradient(90deg, #f093fb, #f5576c);
+    }
+    .accuracy-text {
+        font-size: 12px;
+        color: #888;
+    }
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .badge-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #888;
+    }
+    .empty-state svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+    .score-cell {
+        font-weight: 600;
+    }
+    .score-cell.high { color: #155724; }
+    .score-cell.medium { color: #856404; }
+    .score-cell.low { color: #721c24; }
+</style>
+
+<div class="stats-header">
+    <h1>Dashboard Statistics</h1>
+    <p>Overview of your Question Ranker platform activity</p>
+</div>
+
+<!-- Overview Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_games }}</div>
+        <div class="stat-label">Games Played</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-value">{{ total_users }}</div>
+        <div class="stat-label">Active Players</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-value">{{ total_questions }}</div>
+        <div class="stat-label">Questions</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-value">{{ total_answers }}</div>
+        <div class="stat-label">Answers</div>
+    </div>
+    <div class="stat-card {% if open_reports > 0 %}warning{% else %}orange{% endif %}">
+        <div class="stat-value">{{ open_reports }}</div>
+        <div class="stat-label">Open Reports</div>
+    </div>
+</div>
+
+<div class="two-column">
+    <!-- Top Topics -->
+    <div class="section">
+        <h2>Popular Topics</h2>
+        {% if top_topics %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th style="text-align: right;">Games</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for topic in top_topics %}
+                <tr>
+                    <td>{{ topic.query }}</td>
+                    <td style="text-align: right;">
+                        <span class="badge badge-success">{{ topic.count }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No games played yet</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Games -->
+    <div class="section">
+        <h2>Recent Games</h2>
+        {% if recent_games %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Topic</th>
+                    <th style="text-align: right;">Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in recent_games|slice:":8" %}
+                <tr>
+                    <td>{{ game.user.username }}</td>
+                    <td>{{ game.query|truncatechars:20 }}</td>
+                    <td style="text-align: right;">
+                        {% widthratio game.score game.total_questions 100 as pct %}
+                        <span class="score-cell {% if pct >= 70 %}high{% elif pct >= 40 %}medium{% else %}low{% endif %}">
+                            {{ game.score }}/{{ game.total_questions }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No games played yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if open_reports > 0 %}
+<!-- Open Reports -->
+<div class="section">
+    <h2>Open Reports by Type</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Report Type</th>
+                <th style="text-align: right;">Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in report_types %}
+            <tr>
+                <td>{{ report.report_type|title }}</td>
+                <td style="text-align: right;">
+                    <span class="badge badge-danger">{{ report.count }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Most Difficult Questions -->
+{% if difficult_questions %}
+<div class="section">
+    <h2>Hardest Questions</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 45%">Question</th>
+                <th style="width: 20%">Answer</th>
+                <th style="width: 25%">Accuracy</th>
+                <th style="width: 10%; text-align: right;">Attempts</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in difficult_questions %}
+            <tr>
+                <td>{{ item.question.question_text|truncatechars:60 }}</td>
+                <td><strong>{{ item.question.answer }}</strong></td>
+                <td>
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill {% if item.accuracy < 30 %}low{% elif item.accuracy < 60 %}medium{% endif %}"
+                             style="width: {{ item.accuracy }}%"></div>
+                    </div>
+                    <span class="accuracy-text">{{ item.accuracy|floatformat:0 }}% correct</span>
+                </td>
+                <td style="text-align: right;">{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Daily Activity -->
+{% if daily_games %}
+<div class="section">
+    <h2>Activity (Last 30 Days)</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th style="text-align: right;">Games</th>
+                <th style="text-align: right;">Avg Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for day in daily_games|slice:"-10:" %}
+            <tr>
+                <td>{{ day.date|date:"M d, Y" }}</td>
+                <td style="text-align: right;">{{ day.count }}</td>
+                <td style="text-align: right;">{{ day.avg_score|floatformat:1 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}

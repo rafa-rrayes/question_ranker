@@ -1,0 +1,36 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* Stats button styling */
+    .stats-button {
+        display: block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        padding: 14px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        text-align: center;
+        font-weight: 600;
+        margin: 15px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .stats-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related">
+    <a href="{% url 'admin:stats' %}" class="stats-button">
+        View Statistics Dashboard
+    </a>
+</div>
+{{ block.super }}
+{% endblock %}
